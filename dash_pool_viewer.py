@@ -48,6 +48,7 @@ def update_graph():
     state, t, bucket, clock = filler(bucket, t)
     if t == 0 and clock != None:
         
+        
     
     current_day = datetime.now().strftime('%m-%d')  
     
