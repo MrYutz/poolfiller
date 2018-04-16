@@ -51,24 +51,22 @@ GPIO.setup(17, GPIO.OUT)
 
 def filler(bucket, timer):
     now = datetime.now().strftime('%H:%M:%S')
-    start_time = None
+    start_time = 0
+    off_timer = False
     forth = GPIO.input(18)
 
     if most_common(bucket) == 0:
-        if timer == 0:
-            pass
-        elif timer == 2:
-            timer = 0
+        if GPIO.input(17) == 1:
             GPIO.output(17, 0)
+            off_timer = True
+        else:
+            pass
             
-
     elif most_common(bucket) == 1:
-        if timer == 0:
-            
-            
+        if GPIO.input(17) == 0:
             GPIO.output(17, 1)
             start_time = now
-        elif timer == 1:
+        else:
             pass
             
 
@@ -77,22 +75,21 @@ def filler(bucket, timer):
         bucket.append(0)
         if len(bucket) == 10:
             del bucket[0]
-        if timer == 1:
-            
-            return 0, timer, bucket, now
+        if off_timer == True:
+            if timer == 1:
+                return 0, timer, bucket, now
         else:
-            return 0, timer, bucket, None
+            return 0, timer, bucket, 0
 
     elif forth == True:
         bucket.append(1)
         if len(bucket) == 10:
             del bucket[0]
-        if start_time != None:
+        if start_time != 0:
             if timer == 0:
-                
                 return 1, timer, bucket, start_time
         else:
-            return 1, timer, bucket, None
+            return 1, timer, bucket, 0
                 
 
     
@@ -101,24 +98,24 @@ t = 0
 bucket = []
 FMT = '%H:%M:%S'
 try:
-    timer = None
+    clock = 0
     while True:
         now = datetime.now()
-        state, t, bucket, timer = filler(bucket, t)
-        print(t)
-        if t == 0 and timer != None:
-            start_time = timer
+        state, t, bucket, clock = filler(bucket, t)
+        
+        if t == 0 and clock != 0:
+            start_time = clock
             t = 1
             print('Start Time: {}'.format(start_time))
-        elif t == 1 and timer != None:
-            t = 2
-            length_of_time = datetime.strptime(timer, FMT) - datetime.strptime(start_time, FMT)
+        elif t == 1 and clock != 0:
+            t = 0
+            length_of_time = datetime.strptime(clock, FMT) - datetime.strptime(start_time, FMT)
             if len(df) > 0:
                 if str(df.loc[len(df)-1][0]) == str(now.strftime('%m-%d-%y')):
                     df.loc[len(df)-1][1] = add_time(str(df.loc[len(df)-1][1]), str(length_of_time))
             else:
                 df.loc[len(df)] = [str(now.strftime('%m-%d-%y')), str(length_of_time)]
-            print('End Time: {}'.format(timer))
+            print('End Time: {}'.format(clock))
             print('Counter: {}'.format(t))
             print('State: {}'.format(state))
             print('Bucket: {}'.format(bucket))
@@ -127,6 +124,7 @@ try:
         time.sleep(5)
 except KeyboardInterrupt:
     print('\ncleaning GPIO')
+    GPIO.output(17, 0)
     GPIO.cleanup()
     print('OK')
 
